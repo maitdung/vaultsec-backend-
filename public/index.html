@@ -266,6 +266,77 @@
   .scan-log .line{opacity:0;animation:reveal .3s forwards;}
   .scan-log .line b{color:var(--cyan);font-weight:400;}
 
+  /* ---------- scan visual (radar) ---------- */
+  .scan-visual{
+    display:flex;flex-direction:column;align-items:center;gap:18px;
+    padding:44px 20px 38px;border-top:1px solid var(--panel-line);
+  }
+  .radar{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;}
+  .radar-ring{
+    position:absolute;border-radius:50%;border:1px solid var(--cyan);
+    opacity:0;animation:radarPulse 2.4s ease-out infinite;
+  }
+  .radar-ring.r1{width:60px;height:60px;animation-delay:0s;}
+  .radar-ring.r2{width:60px;height:60px;animation-delay:.8s;}
+  .radar-ring.r3{width:60px;height:60px;animation-delay:1.6s;}
+  @keyframes radarPulse{
+    0%{width:60px;height:60px;opacity:.65;}
+    100%{width:130px;height:130px;opacity:0;}
+  }
+  .radar-shield{
+    width:56px;height:56px;color:var(--cyan);position:relative;z-index:2;
+    filter:drop-shadow(0 0 10px rgba(40,245,224,0.55));
+    overflow:visible;
+  }
+  .radar-check{
+    stroke-dasharray:34;stroke-dashoffset:34;
+    animation:checkDraw 2.4s ease-in-out infinite;
+    color:var(--white);
+  }
+  @keyframes checkDraw{
+    0%,55%{stroke-dashoffset:34;opacity:0;}
+    70%{opacity:1;}
+    85%,100%{stroke-dashoffset:0;opacity:1;}
+  }
+  .radar-sweep{
+    fill:var(--cyan);opacity:.85;
+    transform-origin:32px 32px;
+    animation:sweepMove 1.8s ease-in-out infinite;
+    filter:drop-shadow(0 0 6px var(--cyan));
+  }
+  @keyframes sweepMove{
+    0%{transform:translateY(0);opacity:0;}
+    10%{opacity:.9;}
+    50%{transform:translateY(52px);opacity:.9;}
+    60%{opacity:0;}
+    100%{transform:translateY(0);opacity:0;}
+  }
+  .scan-visual-text{
+    font-family:'Share Tech Mono',monospace;font-size:.8rem;color:var(--cyan);
+    letter-spacing:2px;display:flex;
+  }
+  .dots span{animation:dotBlink 1.4s infinite;opacity:0;}
+  .dots span:nth-child(1){animation-delay:0s;}
+  .dots span:nth-child(2){animation-delay:.2s;}
+  .dots span:nth-child(3){animation-delay:.4s;}
+  @keyframes dotBlink{0%,20%{opacity:0;}35%{opacity:1;}60%,100%{opacity:0;}}
+
+  .scan-progress{
+    width:220px;height:3px;background:var(--panel-line);overflow:hidden;position:relative;
+  }
+  .scan-progress-fill{
+    position:absolute;top:0;left:-40%;width:40%;height:100%;
+    background:linear-gradient(90deg, transparent, var(--cyan), transparent);
+    animation:progressSlide 1.3s ease-in-out infinite;
+  }
+  @keyframes progressSlide{
+    0%{left:-40%;}
+    100%{left:100%;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .radar-ring, .radar-check, .radar-sweep, .dots span, .scan-progress-fill{animation:none;}
+  }
+
   .scan-result{padding:22px 20px;border-top:1px solid var(--panel-line);}
   .scan-result.safe{box-shadow:inset 3px 0 0 var(--cyan);}
   .scan-result.danger{box-shadow:inset 3px 0 0 var(--magenta);}
@@ -279,6 +350,76 @@
   .scan-engines{font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--text);line-height:1.9;}
   .scan-engines .eng{color:var(--magenta);}
   .scan-error{color:var(--magenta);font-family:'Share Tech Mono',monospace;font-size:.82rem;}
+
+  /* ---------- support ---------- */
+  .support-card{
+    border:1px solid var(--panel-line);background:var(--panel);
+    padding:26px 28px;max-width:420px;position:relative;
+  }
+  .support-card::before{
+    content:'';position:absolute;top:0;left:0;width:100%;height:2px;
+    background:linear-gradient(90deg,var(--magenta),transparent);
+  }
+  .support-name{
+    font-family:'Orbitron',sans-serif;font-weight:700;font-size:1.1rem;
+    color:var(--white);margin-bottom:18px;letter-spacing:.5px;
+  }
+  .support-row{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    padding:12px 0;border-top:1px solid var(--panel-line);
+  }
+  .support-label{
+    font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--text-dim);
+    letter-spacing:1.5px;text-transform:uppercase;
+  }
+  .support-value{
+    font-family:'Share Tech Mono',monospace;font-size:.88rem;color:var(--cyan);
+    text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s ease;
+  }
+  .support-value:hover{border-color:var(--cyan);}
+
+  .quicknav{
+    display:flex;gap:26px;font-family:'Share Tech Mono',monospace;font-size:.72rem;
+    letter-spacing:1.5px;text-transform:uppercase;
+  }
+  .quicknav a{color:var(--text-dim);text-decoration:none;position:relative;padding-bottom:3px;transition:color .2s ease;}
+  .quicknav a:hover{color:var(--cyan);}
+  .quicknav a::after{
+    content:'';position:absolute;left:0;bottom:0;width:0;height:1px;background:var(--cyan);
+    transition:width .2s ease;
+  }
+  .quicknav a:hover::after{width:100%;}
+  @media (max-width:900px){.quicknav{display:none;}}
+
+  /* ---------- scroll reveal ---------- */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease, transform .6s ease;}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1;transform:none;transition:none;}
+  }
+
+  /* ---------- back to top ---------- */
+  .to-top{
+    position:fixed;right:24px;bottom:24px;z-index:35;
+    width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+    background:var(--panel);border:1px solid var(--cyan);color:var(--cyan);
+    font-family:'Share Tech Mono',monospace;font-size:1.1rem;cursor:pointer;
+    opacity:0;pointer-events:none;transform:translateY(10px);
+    transition:opacity .25s ease, transform .25s ease, background .2s ease;
+  }
+  .to-top.show{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .to-top:hover{background:rgba(40,245,224,0.12);}
+
+  /* ---------- copy button ---------- */
+  .support-row{position:relative;}
+  .support-value-group{display:flex;align-items:center;gap:10px;}
+  .copy-btn{
+    font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;
+    background:transparent;border:1px solid var(--panel-line);color:var(--text-dim);
+    padding:3px 8px;cursor:pointer;transition:border-color .2s ease, color .2s ease;
+  }
+  .copy-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+  .copy-btn.copied{border-color:var(--cyan);color:var(--cyan);}
 
   a:focus-visible, .card:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;}
   @media (prefers-reduced-motion: reduce){
@@ -295,6 +436,14 @@
 
 <header class="topbar">
   <div class="brand"><span class="dot"></span>VAULT.SEC <small>// open-source arsenal</small></div>
+  <nav class="quicknav">
+    <a href="#scan">Quét file</a>
+    <a href="#malware">Mã độc</a>
+    <a href="#audit">Hệ thống</a>
+    <a href="#vuln">Lỗ hổng</a>
+    <a href="#secrets">Mã nguồn</a>
+    <a href="#support">Hỗ trợ</a>
+  </nav>
   <div class="status-chip">HỆ THỐNG: TRỰC TUYẾN</div>
 </header>
 
@@ -321,7 +470,7 @@
 </section>
 
 <!-- SCAN CENTER -->
-<section class="module" id="scan" style="border-bottom:1px solid var(--panel-line);">
+<section class="module reveal" id="scan" style="border-bottom:1px solid var(--panel-line);">
   <div class="module-head">
     <span class="module-id" style="background:var(--white);">SCAN.CTR</span>
     <span class="module-title">Trung tâm quét file</span>
@@ -340,13 +489,27 @@
       <button class="scan-btn" id="scanBtn">QUÉT FILE</button>
       <button class="scan-btn ghost" id="clearBtn">Xoá</button>
     </div>
+    <div class="scan-visual" id="scanVisual" style="display:none;">
+      <div class="radar">
+        <div class="radar-ring r1"></div>
+        <div class="radar-ring r2"></div>
+        <div class="radar-ring r3"></div>
+        <svg class="radar-shield" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4 L56 14 V30 C56 45 46 55 32 60 C18 55 8 45 8 30 V14 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+          <path class="radar-check" d="M21 32 L29 40 L44 23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect class="radar-sweep" x="6" y="4" width="52" height="4"/>
+        </svg>
+      </div>
+      <div class="scan-visual-text">ĐANG PHÂN TÍCH FILE<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+      <div class="scan-progress"><div class="scan-progress-fill"></div></div>
+    </div>
     <div class="scan-log" id="scanLog" style="display:none;"></div>
     <div class="scan-result" id="scanResult" style="display:none;"></div>
   </div>
 </section>
 
 <!-- MODULE 01 -->
-<section class="module" id="malware">
+<section class="module reveal" id="malware">
   <div class="module-head">
     <span class="module-id">MODULE.01</span>
     <span class="module-title">Quét Virus, Mã độc &amp; Dấu hiệu bị hack</span>
@@ -375,7 +538,7 @@
 </section>
 
 <!-- MODULE 02 -->
-<section class="module" id="audit">
+<section class="module reveal" id="audit">
   <div class="module-head">
     <span class="module-id alt">MODULE.02</span>
     <span class="module-title">Kiểm tra &amp; Đánh giá bảo mật Hệ thống</span>
@@ -398,7 +561,7 @@
 </section>
 
 <!-- MODULE 03 -->
-<section class="module" id="vuln">
+<section class="module reveal" id="vuln">
   <div class="module-head">
     <span class="module-id alt2">MODULE.03</span>
     <span class="module-title">Quét Lỗ hổng Web &amp; Mạng</span>
@@ -421,7 +584,7 @@
 </section>
 
 <!-- MODULE 04 -->
-<section class="module" style="border-bottom:none;" id="secrets">
+<section class="module reveal" style="border-bottom:none;" id="secrets">
   <div class="module-head">
     <span class="module-id alt3">MODULE.04</span>
     <span class="module-title">Quét Mã nguồn &amp; Chống lộ thông tin nhạy cảm</span>
@@ -443,10 +606,38 @@
   </div>
 </section>
 
+<section class="module reveal" id="support" style="border-bottom:1px solid var(--panel-line);">
+  <div class="module-head">
+    <span class="module-id alt">SUPPORT</span>
+    <span class="module-title">Hỗ trợ</span>
+  </div>
+  <p class="module-desc">Có thắc mắc về công cụ, kết quả quét, hoặc cần hỗ trợ kỹ thuật? Liên hệ trực tiếp.</p>
+
+  <div class="support-card">
+    <div class="support-name">Mai Tuấn Dũng</div>
+    <div class="support-row">
+      <span class="support-label">Điện thoại</span>
+      <div class="support-value-group">
+        <a class="support-value" href="tel:0987543746">0987 543 746</a>
+        <button class="copy-btn" data-copy="0987543746" type="button">Copy</button>
+      </div>
+    </div>
+    <div class="support-row">
+      <span class="support-label">Email</span>
+      <div class="support-value-group">
+        <a class="support-value" href="mailto:maituandung004@gmail.com">maituandung004@gmail.com</a>
+        <button class="copy-btn" data-copy="maituandung004@gmail.com" type="button">Copy</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="fbrand">VAULT.SEC — 2026</div>
   <div class="fnote">Đây là danh mục tổng hợp mang tính tham khảo. Trước khi triển khai bất kỳ công cụ nào lên hệ thống thật, hãy đọc kỹ tài liệu chính thức và <b>kiểm thử trong môi trường cách ly</b>.</div>
 </footer>
+
+<button class="to-top" id="toTopBtn" aria-label="Lên đầu trang" type="button">↑</button>
 
 <script>
   // Nếu bạn deploy backend ở địa chỉ khác với nơi host trang này,
@@ -462,6 +653,7 @@
   const clearBtn = document.getElementById('clearBtn');
   const scanLog = document.getElementById('scanLog');
   const scanResult = document.getElementById('scanResult');
+  const scanVisual = document.getElementById('scanVisual');
 
   let selectedFile = null;
 
@@ -472,6 +664,7 @@
     dropZone.style.display = 'none';
     scanResult.style.display = 'none';
     scanLog.style.display = 'none';
+    scanVisual.style.display = 'none';
   }
 
   browseBtn.addEventListener('click', () => fileInput.click());
@@ -499,6 +692,7 @@
     dropZone.style.display = 'block';
     scanResult.style.display = 'none';
     scanLog.style.display = 'none';
+    scanVisual.style.display = 'none';
   });
 
   function logLine(text, delay) {
@@ -515,6 +709,7 @@
     scanResult.style.display = 'none';
     scanLog.innerHTML = '';
     scanLog.style.display = 'block';
+    scanVisual.style.display = 'flex';
     logLine('<b>root@vault:~$</b> upload_file --target="' + selectedFile.name + '"', 0);
     logLine('[..] đang gửi file lên VirusTotal, vui lòng chờ (có thể mất 15–60 giây)...', .3);
 
@@ -530,6 +725,7 @@
 
       if (!res.ok) throw new Error(data.error || 'Lỗi không xác định');
 
+      scanVisual.style.display = 'none';
       logLine('[OK] hoàn tất phân tích · ' + data.totalEngines + ' engine đã kiểm tra', .1);
 
       scanResult.style.display = 'block';
@@ -550,12 +746,56 @@
         `;
       }
     } catch (err) {
+      scanVisual.style.display = 'none';
       scanResult.style.display = 'block';
       scanResult.className = 'scan-result danger';
       scanResult.innerHTML = `<div class="scan-error">Lỗi: ${err.message}</div>`;
     } finally {
       scanBtn.disabled = false;
     }
+  });
+  // ---- hiện dần khi cuộn tới ----
+  const revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    revealEls.forEach(el => io.observe(el));
+  } else {
+    revealEls.forEach(el => el.classList.add('in-view'));
+  }
+
+  // ---- nút lên đầu trang ----
+  const toTopBtn = document.getElementById('toTopBtn');
+  window.addEventListener('scroll', () => {
+    toTopBtn.classList.toggle('show', window.scrollY > 500);
+  });
+  toTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ---- nút copy số điện thoại / email ----
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.getAttribute('data-copy');
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = 'Đã copy';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1600);
+      } catch (e) {
+        // trình duyệt cũ không hỗ trợ clipboard API — bỏ qua trong im lặng
+      }
+    });
   });
 </script>
 </body>
