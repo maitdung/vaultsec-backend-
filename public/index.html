@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAULT.SEC // Kho Vũ Khí Mã Nguồn Mở</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#04070c;
+    --panel:#080d16;
+    --panel-line:#132133;
+    --cyan:#28f5e0;
+    --magenta:#ff2f8e;
+    --amber:#ffcc4d;
+    --text:#b9c6da;
+    --text-dim:#5c6b82;
+    --white:#eef4ff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--void);
+    color:var(--text);
+    font-family:'Rajdhani',sans-serif;
+    overflow-x:hidden;
+    position:relative;
+  }
+  ::selection{background:var(--magenta);color:var(--void);}
+
+  /* ---------- ambient layers ---------- */
+  .grid-bg{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(40,245,224,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(40,245,224,0.045) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(ellipse 90% 70% at 50% 20%, black 40%, transparent 90%);
+  }
+  .scanlines{
+    position:fixed;inset:0;z-index:40;pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px);
+    opacity:.5;
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed;inset:0;z-index:39;pointer-events:none;
+    box-shadow:inset 0 0 220px rgba(0,0,0,0.85);
+  }
+  .noise-flicker{
+    position:fixed;inset:0;z-index:41;pointer-events:none;
+    background:rgba(40,245,224,0.015);
+    animation:flicker 6s infinite;
+  }
+  @keyframes flicker{
+    0%,93%,100%{opacity:0;}
+    94%{opacity:1;}
+    95%{opacity:0;}
+    96%{opacity:.6;}
+    97%{opacity:0;}
+  }
+
+  section{position:relative;z-index:1;}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 5vw;
+    border-bottom:1px solid var(--panel-line);
+    position:sticky;top:0;background:rgba(4,7,12,0.86);backdrop-filter:blur(6px);
+    z-index:30;
+  }
+  .brand{
+    font-family:'Orbitron',sans-serif;font-weight:900;letter-spacing:3px;
+    font-size:1.05rem;color:var(--white);display:flex;align-items:center;gap:10px;
+  }
+  .brand .dot{width:9px;height:9px;background:var(--cyan);box-shadow:0 0 12px var(--cyan);border-radius:1px;animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .brand small{color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-weight:400;letter-spacing:1px;font-size:.7rem;}
+  .status-chip{
+    font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--cyan);
+    border:1px solid rgba(40,245,224,0.35);padding:6px 12px;letter-spacing:1.5px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .status-chip::before{content:'';width:6px;height:6px;background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan);}
+
+  /* ---------- hero ---------- */
+  .hero{
+    min-height:82vh;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:8vh 6vw 6vh;
+    border-bottom:1px solid var(--panel-line);
+  }
+  .boot-line{
+    font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-size:.78rem;
+    letter-spacing:1px;margin-bottom:22px;opacity:0;animation:reveal .4s forwards;
+  }
+  .boot-line b{color:var(--amber);font-weight:400;}
+  .boot-line.b1{animation-delay:.1s;}
+  .boot-line.b2{animation-delay:.35s;}
+  .boot-line.b3{animation-delay:.6s;}
+  @keyframes reveal{to{opacity:1;}}
+
+  .eyebrow{
+    font-family:'Share Tech Mono',monospace;color:var(--magenta);font-size:.78rem;
+    letter-spacing:4px;margin-bottom:18px;
+  }
+  .eyebrow::before{content:'>_ ';color:var(--cyan);}
+
+  h1.glitch{
+    font-family:'Orbitron',sans-serif;font-weight:900;
+    font-size:clamp(2.4rem, 7vw, 5.2rem);
+    line-height:1.02;color:var(--white);letter-spacing:1px;
+    position:relative;text-shadow:0 0 30px rgba(40,245,224,0.25);
+    max-width:16ch;
+  }
+  h1.glitch span{position:relative;display:inline-block;}
+  h1.glitch::before, h1.glitch::after{
+    content:attr(data-text);position:absolute;left:0;top:0;width:100%;
+    overflow:hidden;
+  }
+  h1.glitch::before{
+    color:var(--cyan);left:2px;animation:glitchTop 5s infinite linear alternate-reverse;
+    opacity:.7;
+  }
+  h1.glitch::after{
+    color:var(--magenta);left:-2px;animation:glitchBot 4s infinite linear alternate-reverse;
+    opacity:.6;
+  }
+  @keyframes glitchTop{
+    0%,100%{clip-path:inset(0 0 85% 0);transform:translate(0,0);}
+    20%{clip-path:inset(10% 0 60% 0);transform:translate(-2px,-1px);}
+    40%{clip-path:inset(40% 0 30% 0);transform:translate(2px,1px);}
+    60%{clip-path:inset(70% 0 5% 0);transform:translate(-1px,0);}
+    80%{clip-path:inset(15% 0 70% 0);transform:translate(1px,1px);}
+  }
+  @keyframes glitchBot{
+    0%,100%{clip-path:inset(80% 0 0 0);transform:translate(0,0);}
+    25%{clip-path:inset(45% 0 30% 0);transform:translate(2px,0);}
+    50%{clip-path:inset(10% 0 75% 0);transform:translate(-2px,1px);}
+    75%{clip-path:inset(60% 0 15% 0);transform:translate(1px,-1px);}
+  }
+
+  .hero-sub{
+    margin-top:26px;max-width:56ch;color:var(--text);font-size:1.05rem;line-height:1.7;
+    font-weight:500;
+  }
+  .hero-sub b{color:var(--white);font-weight:700;}
+
+  .hero-meta{
+    margin-top:44px;display:flex;gap:0;flex-wrap:wrap;
+    border-top:1px solid var(--panel-line);
+  }
+  .hero-meta .m{
+    padding:18px 30px 0 0;margin-right:30px;border-right:1px solid var(--panel-line);
+    padding-top:18px;
+  }
+  .hero-meta .m:last-child{border-right:none;}
+  .hero-meta .num{font-family:'Orbitron',sans-serif;font-size:1.7rem;color:var(--cyan);font-weight:700;}
+  .hero-meta .lbl{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
+
+  /* ---------- section headers ---------- */
+  .module{padding:8vh 6vw;border-bottom:1px solid var(--panel-line);}
+  .module-head{
+    display:flex;align-items:baseline;gap:18px;margin-bottom:8px;flex-wrap:wrap;
+  }
+  .module-id{
+    font-family:'Share Tech Mono',monospace;color:var(--void);background:var(--cyan);
+    font-size:.75rem;padding:3px 9px;letter-spacing:2px;font-weight:700;
+  }
+  .module-id.alt{background:var(--magenta);}
+  .module-id.alt2{background:var(--amber);}
+  .module-id.alt3{background:var(--text);}
+  .module-title{
+    font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(1.3rem,3vw,2rem);
+    color:var(--white);letter-spacing:1px;
+  }
+  .module-desc{
+    font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-size:.85rem;
+    max-width:70ch;margin:14px 0 40px;line-height:1.6;
+  }
+
+  /* ---------- cards ---------- */
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;
+    background:var(--panel-line);border:1px solid var(--panel-line);
+  }
+  .card{
+    background:var(--panel);padding:26px 24px;position:relative;overflow:hidden;
+    transition:background .25s ease;
+  }
+  .card::before{
+    content:'';position:absolute;top:0;left:0;width:100%;height:2px;
+    background:linear-gradient(90deg,var(--cyan),transparent);
+    transform:scaleX(0);transform-origin:left;transition:transform .35s ease;
+  }
+  .card:hover{background:#0c1420;}
+  .card:hover::before{transform:scaleX(1);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px;}
+  .card-name{font-family:'Orbitron',sans-serif;font-size:1.05rem;color:var(--white);font-weight:700;letter-spacing:.5px;}
+  .card-tag{
+    font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--cyan);
+    border:1px solid rgba(40,245,224,0.35);padding:2px 7px;white-space:nowrap;letter-spacing:1px;
+  }
+  .repo-path{
+    font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--amber);
+    margin-bottom:14px;word-break:break-all;
+  }
+  .repo-path::before{content:'$ git clone ';color:var(--text-dim);}
+  .card-desc{font-size:.94rem;line-height:1.55;color:var(--text);margin-bottom:22px;min-height:74px;}
+  .card-link{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'Share Tech Mono',monospace;font-size:.75rem;letter-spacing:1.5px;
+    color:var(--cyan);text-decoration:none;border-bottom:1px solid transparent;
+    transition:border-color .2s ease, gap .2s ease;
+  }
+  .card-link:hover{border-color:var(--cyan);gap:12px;}
+  .card-link::after{content:'→';}
+
+  /* ---------- footer ---------- */
+  footer{
+    padding:6vh 6vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;
+  }
+  footer .fbrand{font-family:'Orbitron',sans-serif;color:var(--text-dim);font-size:.85rem;letter-spacing:2px;}
+  footer .fnote{
+    font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-size:.72rem;letter-spacing:1px;
+    max-width:50ch;line-height:1.6;
+  }
+  footer .fnote b{color:var(--amber);font-weight:400;}
+
+  @media (max-width:640px){
+    .topbar{padding:16px 5vw;}
+    .status-chip{display:none;}
+    .hero{padding:6vh 6vw 5vh;}
+    .module{padding:6vh 6vw;}
+  }
+
+  /* ---------- scan center ---------- */
+  .scan-box{border:1px solid var(--panel-line);background:var(--panel);padding:8px;}
+  .scan-drop{
+    border:1px dashed rgba(40,245,224,0.35);padding:50px 20px;text-align:center;
+    cursor:pointer;transition:border-color .2s ease, background .2s ease;
+  }
+  .scan-drop.dragover{border-color:var(--cyan);background:rgba(40,245,224,0.05);}
+  .scan-drop-icon{font-size:1.8rem;color:var(--cyan);margin-bottom:10px;}
+  .scan-drop-text{font-family:'Rajdhani',sans-serif;font-size:1.05rem;color:var(--text);}
+  .scan-browse{color:var(--cyan);text-decoration:underline;cursor:pointer;}
+  .scan-drop-sub{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;}
+
+  .scan-file-row{display:flex;align-items:center;gap:14px;padding:16px 20px;flex-wrap:wrap;}
+  .scan-file-name{font-family:'Share Tech Mono',monospace;color:var(--amber);font-size:.85rem;flex:1;word-break:break-all;}
+  .scan-btn{
+    font-family:'Share Tech Mono',monospace;letter-spacing:2px;font-size:.75rem;
+    background:var(--cyan);color:var(--void);border:none;padding:10px 20px;
+    cursor:pointer;font-weight:700;transition:opacity .2s ease;
+  }
+  .scan-btn:hover{opacity:.85;}
+  .scan-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .scan-btn.ghost{background:transparent;color:var(--text-dim);border:1px solid var(--panel-line);}
+
+  .scan-log{
+    font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--text-dim);
+    padding:16px 20px;border-top:1px solid var(--panel-line);line-height:1.9;
+  }
+  .scan-log .line{opacity:0;animation:reveal .3s forwards;}
+  .scan-log .line b{color:var(--cyan);font-weight:400;}
+
+  .scan-result{padding:22px 20px;border-top:1px solid var(--panel-line);}
+  .scan-result.safe{box-shadow:inset 3px 0 0 var(--cyan);}
+  .scan-result.danger{box-shadow:inset 3px 0 0 var(--magenta);}
+  .scan-verdict{
+    font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.4rem;letter-spacing:1px;
+    margin-bottom:8px;
+  }
+  .scan-verdict.safe{color:var(--cyan);}
+  .scan-verdict.danger{color:var(--magenta);}
+  .scan-sub{font-family:'Share Tech Mono',monospace;font-size:.8rem;color:var(--text-dim);margin-bottom:14px;}
+  .scan-engines{font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--text);line-height:1.9;}
+  .scan-engines .eng{color:var(--magenta);}
+  .scan-error{color:var(--magenta);font-family:'Share Tech Mono',monospace;font-size:.82rem;}
+
+  a:focus-visible, .card:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+<div class="noise-flicker"></div>
+
+<header class="topbar">
+  <div class="brand"><span class="dot"></span>VAULT.SEC <small>// open-source arsenal</small></div>
+  <div class="status-chip">HỆ THỐNG: TRỰC TUYẾN</div>
+</header>
+
+<section class="hero">
+  <div class="boot-line b1">root@vault:~$ initiate_scan --category=all</div>
+  <div class="boot-line b2">[OK] 8 kho lưu trữ đã xác thực <b>· 4 mô-đun bảo mật</b></div>
+  <div class="boot-line b3">[OK] sẵn sàng truy xuất dữ liệu...</div>
+
+  <div class="eyebrow">danh mục công cụ phòng thủ</div>
+  <h1 class="glitch" data-text="KHO VŨ KHÍ BẢO MẬT MÃ NGUỒN MỞ">KHO VŨ KHÍ BẢO MẬT MÃ NGUỒN MỞ</h1>
+
+  <p class="hero-sub">
+    "Bảo mật" là một mảng rất rộng. Danh sách dưới đây phân loại các repository
+    GitHub uy tín nhất theo <b>4 nghiệp vụ cụ thể</b> — quét mã độc, rà soát hệ
+    thống, dò lỗ hổng, và chống lộ thông tin nhạy cảm — để bạn chọn đúng vũ khí
+    cho đúng trận chiến.
+  </p>
+
+  <div class="hero-meta">
+    <div class="m"><div class="num">04</div><div class="lbl">mô-đun</div></div>
+    <div class="m"><div class="num">08</div><div class="lbl">repository</div></div>
+    <div class="m"><div class="num">100%</div><div class="lbl">mã nguồn mở</div></div>
+  </div>
+</section>
+
+<!-- SCAN CENTER -->
+<section class="module" id="scan" style="border-bottom:1px solid var(--panel-line);">
+  <div class="module-head">
+    <span class="module-id" style="background:var(--white);">SCAN.CTR</span>
+    <span class="module-title">Trung tâm quét file</span>
+  </div>
+  <p class="module-desc">Tải file lên để kiểm tra qua ~70 công cụ antivirus (chạy bằng VirusTotal). File không được lưu lại hay chạy trên hệ thống — chỉ dùng để phân tích rồi xoá ngay.</p>
+
+  <div class="scan-box" id="scanBox">
+    <input type="file" id="fileInput" hidden>
+    <div class="scan-drop" id="dropZone">
+      <div class="scan-drop-icon">⇪</div>
+      <div class="scan-drop-text">Kéo thả file vào đây, hoặc <span class="scan-browse" id="browseBtn">chọn file</span></div>
+      <div class="scan-drop-sub">Tối đa 32MB / file</div>
+    </div>
+    <div class="scan-file-row" id="fileRow" style="display:none;">
+      <div class="scan-file-name" id="fileNameLabel"></div>
+      <button class="scan-btn" id="scanBtn">QUÉT FILE</button>
+      <button class="scan-btn ghost" id="clearBtn">Xoá</button>
+    </div>
+    <div class="scan-log" id="scanLog" style="display:none;"></div>
+    <div class="scan-result" id="scanResult" style="display:none;"></div>
+  </div>
+</section>
+
+<!-- MODULE 01 -->
+<section class="module" id="malware">
+  <div class="module-head">
+    <span class="module-id">MODULE.01</span>
+    <span class="module-title">Quét Virus, Mã độc &amp; Dấu hiệu bị hack</span>
+  </div>
+  <p class="module-desc">MALWARE &amp; IOC SCANNERS — dùng khi bạn cần dò quét virus, trojan, hoặc dấu hiệu xâm nhập đang tồn tại trong hệ thống.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-top"><span class="card-name">YARA</span><span class="card-tag">RULE ENGINE</span></div>
+      <div class="repo-path">VirusTotal/yara</div>
+      <p class="card-desc">Được xem là "vũ khí tối thượng" của giới phân tích mã độc — nhận diện và phân loại tập tin độc hại dựa trên các quy tắc (rules) tự định nghĩa bằng văn bản hoặc mẫu nhị phân.</p>
+      <a class="card-link" href="https://github.com/VirusTotal/yara" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+    <div class="card">
+      <div class="card-top"><span class="card-name">ClamAV</span><span class="card-tag">AV ENGINE</span></div>
+      <div class="repo-path">Cisco-Talos/clamav</div>
+      <p class="card-desc">Engine chống virus mã nguồn mở nổi tiếng, phổ biến trên máy chủ Linux để quét tệp tin độc hại, quét email hoặc các file được người dùng tải lên hệ thống.</p>
+      <a class="card-link" href="https://github.com/Cisco-Talos/clamav" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+    <div class="card">
+      <div class="card-top"><span class="card-name">Loki</span><span class="card-tag">IOC SCANNER</span></div>
+      <div class="repo-path">Neo23x0/Loki</div>
+      <p class="card-desc">Công cụ quét IOC (Indicators of Compromise). Nếu nghi ngờ máy chủ bị nhiễm mã độc hoặc bị tấn công, Loki tìm dấu vết như hash độc hại, tên file đáng ngờ, kết nối mạng lạ.</p>
+      <a class="card-link" href="https://github.com/Neo23x0/Loki" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 02 -->
+<section class="module" id="audit">
+  <div class="module-head">
+    <span class="module-id alt">MODULE.02</span>
+    <span class="module-title">Kiểm tra &amp; Đánh giá bảo mật Hệ thống</span>
+  </div>
+  <p class="module-desc">SYSTEM SECURITY AUDITING — dùng khi cần kiểm tra máy chủ, hệ điều hành có được cấu hình an toàn hay không.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-top"><span class="card-name">Lynis</span><span class="card-tag">HARDENING</span></div>
+      <div class="repo-path">CISOfy/lynis</div>
+      <p class="card-desc">Công cụ rà soát bảo mật chuyên sâu cho Linux, macOS và Unix. Quét toàn bộ hệ thống, tìm cấu hình yếu kém và đưa ra báo cáo chi tiết kèm hướng khắc phục.</p>
+      <a class="card-link" href="https://github.com/CISOfy/lynis" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+    <div class="card">
+      <div class="card-top"><span class="card-name">Wazuh</span><span class="card-tag">SIEM / XDR</span></div>
+      <div class="repo-path">wazuh/wazuh</div>
+      <p class="card-desc">Nền tảng bảo mật toàn diện giám sát hệ thống theo thời gian thực, phát hiện xâm nhập, theo dõi tính toàn vẹn file, và đánh giá cấu hình bảo mật liên tục.</p>
+      <a class="card-link" href="https://github.com/wazuh/wazuh" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 03 -->
+<section class="module" id="vuln">
+  <div class="module-head">
+    <span class="module-id alt2">MODULE.03</span>
+    <span class="module-title">Quét Lỗ hổng Web &amp; Mạng</span>
+  </div>
+  <p class="module-desc">VULNERABILITY SCANNERS — dùng khi cần tìm lỗ hổng trước khi hacker khai thác và lây nhiễm mã độc vào hệ thống.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-top"><span class="card-name">Nuclei</span><span class="card-tag">CVE TEMPLATES</span></div>
+      <div class="repo-path">projectdiscovery/nuclei</div>
+      <p class="card-desc">Trình quét lỗ hổng cực nhanh và linh hoạt, dựa trên các mẫu (templates) được cộng đồng cập nhật liên tục để phát hiện các CVE mới nhất trên ứng dụng web và máy chủ.</p>
+      <a class="card-link" href="https://github.com/projectdiscovery/nuclei" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+    <div class="card">
+      <div class="card-top"><span class="card-name">OWASP ZAP</span><span class="card-tag">PENTEST</span></div>
+      <div class="repo-path">zaproxy/zaproxy</div>
+      <p class="card-desc">Công cụ kiểm thử bảo mật ứng dụng web phổ biến nhất thế giới, tự động tìm kiếm lỗ hổng trong các ứng dụng web của bạn.</p>
+      <a class="card-link" href="https://github.com/zaproxy/zaproxy" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 04 -->
+<section class="module" style="border-bottom:none;" id="secrets">
+  <div class="module-head">
+    <span class="module-id alt3">MODULE.04</span>
+    <span class="module-title">Quét Mã nguồn &amp; Chống lộ thông tin nhạy cảm</span>
+  </div>
+  <p class="module-desc">CODE &amp; SECRET SCANNERS — đảm bảo mã nguồn sạch sẽ, không vô tình làm rò rỉ mật khẩu hay API key.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-top"><span class="card-name">TruffleHog</span><span class="card-tag">GIT HISTORY</span></div>
+      <div class="repo-path">trufflesecurity/trufflehog</div>
+      <p class="card-desc">Quét sâu vào lịch sử commit trên GitHub/GitLab nhằm phát hiện mật khẩu, API key hay thông tin nhạy cảm vô tình bị đưa vào mã nguồn.</p>
+      <a class="card-link" href="https://github.com/trufflesecurity/trufflehog" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+    <div class="card">
+      <div class="card-top"><span class="card-name">Gitleaks</span><span class="card-tag">GIT HISTORY</span></div>
+      <div class="repo-path">gitleaks/gitleaks</div>
+      <p class="card-desc">Công cụ nhẹ, nhanh để phát hiện secret bị lộ trong lịch sử commit — thường được tích hợp thẳng vào pipeline CI/CD để chặn rò rỉ trước khi merge.</p>
+      <a class="card-link" href="https://github.com/gitleaks/gitleaks" target="_blank" rel="noopener">Truy cập repository</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="fbrand">VAULT.SEC — 2026</div>
+  <div class="fnote">Đây là danh mục tổng hợp mang tính tham khảo. Trước khi triển khai bất kỳ công cụ nào lên hệ thống thật, hãy đọc kỹ tài liệu chính thức và <b>kiểm thử trong môi trường cách ly</b>.</div>
+</footer>
+
+<script>
+  // Nếu bạn deploy backend ở địa chỉ khác với nơi host trang này,
+  // đổi API_BASE thành URL backend, ví dụ: 'https://vaultsec-backend.onrender.com'
+  const API_BASE = '';
+
+  const dropZone = document.getElementById('dropZone');
+  const browseBtn = document.getElementById('browseBtn');
+  const fileInput = document.getElementById('fileInput');
+  const fileRow = document.getElementById('fileRow');
+  const fileNameLabel = document.getElementById('fileNameLabel');
+  const scanBtn = document.getElementById('scanBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const scanLog = document.getElementById('scanLog');
+  const scanResult = document.getElementById('scanResult');
+
+  let selectedFile = null;
+
+  function showFile(file) {
+    selectedFile = file;
+    fileNameLabel.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+    fileRow.style.display = 'flex';
+    dropZone.style.display = 'none';
+    scanResult.style.display = 'none';
+    scanLog.style.display = 'none';
+  }
+
+  browseBtn.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) showFile(e.target.files[0]);
+  });
+
+  ['dragover'].forEach(evt => dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+  }));
+  dropZone.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files[0]) showFile(e.dataTransfer.files[0]);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    selectedFile = null;
+    fileInput.value = '';
+    fileRow.style.display = 'none';
+    dropZone.style.display = 'block';
+    scanResult.style.display = 'none';
+    scanLog.style.display = 'none';
+  });
+
+  function logLine(text, delay) {
+    const div = document.createElement('div');
+    div.className = 'line';
+    div.style.animationDelay = delay + 's';
+    div.innerHTML = text;
+    scanLog.appendChild(div);
+  }
+
+  scanBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    scanBtn.disabled = true;
+    scanResult.style.display = 'none';
+    scanLog.innerHTML = '';
+    scanLog.style.display = 'block';
+    logLine('<b>root@vault:~$</b> upload_file --target="' + selectedFile.name + '"', 0);
+    logLine('[..] đang gửi file lên VirusTotal, vui lòng chờ (có thể mất 15–60 giây)...', .3);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const res = await fetch(API_BASE + '/api/scan', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Lỗi không xác định');
+
+      logLine('[OK] hoàn tất phân tích · ' + data.totalEngines + ' engine đã kiểm tra', .1);
+
+      scanResult.style.display = 'block';
+      if (data.safe) {
+        scanResult.className = 'scan-result safe';
+        scanResult.innerHTML = `
+          <div class="scan-verdict safe">✓ AN TOÀN</div>
+          <div class="scan-sub">0 / ${data.totalEngines} engine phát hiện mã độc trong "${data.fileName}"</div>
+        `;
+      } else {
+        scanResult.className = 'scan-result danger';
+        const list = data.flaggedBy.slice(0, 8)
+          .map(f => `<div><span class="eng">${f.engine}</span> → ${f.verdict}</div>`).join('');
+        scanResult.innerHTML = `
+          <div class="scan-verdict danger">⚠ PHÁT HIỆN NGUY HIỂM</div>
+          <div class="scan-sub">${data.maliciousCount} / ${data.totalEngines} engine gắn cờ độc hại trong "${data.fileName}"</div>
+          <div class="scan-engines">${list}</div>
+        `;
+      }
+    } catch (err) {
+      scanResult.style.display = 'block';
+      scanResult.className = 'scan-result danger';
+      scanResult.innerHTML = `<div class="scan-error">Lỗi: ${err.message}</div>`;
+    } finally {
+      scanBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
