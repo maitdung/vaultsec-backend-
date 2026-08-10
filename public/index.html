@@ -350,6 +350,24 @@
   .scan-engines{font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--text);line-height:1.9;}
   .scan-engines .eng{color:var(--magenta);}
   .scan-error{color:var(--magenta);font-family:'Share Tech Mono',monospace;font-size:.82rem;}
+  /* ---------- divider "hoặc" ---------- */
+  .scan-divider{
+    display:flex;align-items:center;gap:14px;margin:24px 0;
+    color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.72rem;
+    letter-spacing:2px;text-transform:uppercase;
+  }
+  .scan-divider::before, .scan-divider::after{content:'';flex:1;height:1px;background:var(--panel-line);}
+
+  .quota-warning{
+    margin-top:14px;padding:10px 14px;border:1px solid rgba(255,204,77,0.35);
+    background:rgba(255,204,77,0.06);color:var(--amber);
+    font-family:'Share Tech Mono',monospace;font-size:.72rem;line-height:1.6;
+  }
+
+  .scan-caveat{
+    margin-top:16px;padding-top:14px;border-top:1px dashed var(--panel-line);
+    font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--text-dim);line-height:1.7;
+  }
 
   /* ---------- repo scan ---------- */
   .repo-input-row{display:flex;gap:10px;padding:20px;flex-wrap:wrap;}
@@ -501,10 +519,10 @@
     cho đúng trận chiến.
   </p>
 
-  <div class="hero-meta">
-    <div class="m"><div class="num">04</div><div class="lbl">mô-đun</div></div>
-    <div class="m"><div class="num">08</div><div class="lbl">repository</div></div>
-    <div class="m"><div class="num">100%</div><div class="lbl">mã nguồn mở</div></div>
+  <div class="hero-meta" id="heroStats">
+    <div class="m"><div class="num" id="statFiles">–</div><div class="lbl">file đã quét</div></div>
+    <div class="m"><div class="num" id="statUrls">–</div><div class="lbl">link đã kiểm tra</div></div>
+    <div class="m"><div class="num" id="statThreats">–</div><div class="lbl">mối đe doạ phát hiện</div></div>
   </div>
 </section>
 
@@ -544,6 +562,30 @@
     </div>
     <div class="scan-log" id="scanLog" style="display:none;"></div>
     <div class="scan-result" id="scanResult" style="display:none;"></div>
+  </div>
+
+  <div class="scan-divider"><span>hoặc</span></div>
+
+  <div class="scan-box">
+    <div class="repo-input-row">
+      <input type="text" id="urlInput" class="repo-input" placeholder="https://vi-du-mot-duong-link.com">
+      <button class="scan-btn" id="urlScanBtn" type="button">KIỂM TRA LINK</button>
+    </div>
+    <div class="scan-visual" id="urlScanVisual" style="display:none;">
+      <div class="radar">
+        <div class="radar-ring r1"></div>
+        <div class="radar-ring r2"></div>
+        <div class="radar-ring r3"></div>
+        <svg class="radar-shield" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4 L56 14 V30 C56 45 46 55 32 60 C18 55 8 45 8 30 V14 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+          <path class="radar-check" d="M21 32 L29 40 L44 23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect class="radar-sweep" x="6" y="4" width="52" height="4"/>
+        </svg>
+      </div>
+      <div class="scan-visual-text">ĐANG KIỂM TRA LINK<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+      <div class="scan-progress"><div class="scan-progress-fill"></div></div>
+    </div>
+    <div class="scan-result" id="urlScanResult" style="display:none;"></div>
   </div>
 </section>
 
@@ -810,10 +852,17 @@
       if (!res.ok) throw new Error(data.error || 'Lỗi không xác định');
 
       scanVisual.style.display = 'none';
-      logLine('[OK] hoàn tất phân tích · ' + data.totalEngines + ' engine đã kiểm tra', .1);
+      if (data.vtQuotaExceeded) {
+        logLine('[!!] VirusTotal đã hết lượt miễn phí hôm nay — chỉ dùng được lớp quét cục bộ', .1);
+      } else {
+        logLine('[OK] hoàn tất phân tích · ' + data.totalEngines + ' engine đã kiểm tra', .1);
+      }
 
       scanResult.style.display = 'block';
       const localMatches = data.localRuleMatches || [];
+      const quotaNote = data.vtQuotaExceeded
+        ? `<div class="quota-warning">⚠ VirusTotal đã hết quota miễn phí hôm nay nên bước này KHÔNG chạy qua ~70 engine antivirus như bình thường — kết quả dưới đây chỉ dựa vào lớp quét rule cục bộ (kiểu YARA), độ tin cậy thấp hơn nhiều. Vui lòng thử lại vào ngày mai để có kết quả đầy đủ.</div>`
+        : '';
       const localBlock = localMatches.length
         ? `<div class="local-rule-block">
              <div class="local-rule-title">Lớp quét rule cục bộ (kiểu YARA)</div>
@@ -829,7 +878,9 @@
         scanResult.innerHTML = `
           <div class="scan-verdict safe">✓ AN TOÀN</div>
           <div class="scan-sub">0 / ${data.totalEngines} engine phát hiện mã độc trong "${data.fileName}"</div>
+          ${quotaNote}
           ${localBlock}
+          <div class="scan-caveat">⚠ Lưu ý: không engine nào biết đây là mã độc <b>tại thời điểm quét</b>. Điều này không đảm bảo file chắc chắn vô hại 100% — mã độc mới, mã độc ngụy trang, hoặc tấn công nhắm mục tiêu riêng có thể chưa được engine nào nhận diện. Vẫn nên cẩn trọng với file từ nguồn không rõ ràng.</div>
         `;
       } else {
         scanResult.className = 'scan-result danger';
@@ -839,7 +890,9 @@
           <div class="scan-verdict danger">⚠ PHÁT HIỆN NGUY HIỂM</div>
           <div class="scan-sub">${data.maliciousCount} / ${data.totalEngines} engine gắn cờ độc hại trong "${data.fileName}"</div>
           <div class="scan-engines">${list}</div>
+          ${quotaNote}
           ${localBlock}
+          <div class="scan-caveat">Khuyến nghị: không mở hoặc chạy file này. Nếu đã lỡ mở, cân nhắc ngắt mạng và đổi mật khẩu các tài khoản quan trọng từ thiết bị khác.</div>
         `;
       }
     } catch (err) {
@@ -851,6 +904,88 @@
       scanBtn.disabled = false;
     }
   });
+
+  // ==================== QUÉT LINK URL ====================
+  const urlInput = document.getElementById('urlInput');
+  const urlScanBtn = document.getElementById('urlScanBtn');
+  const urlScanVisual = document.getElementById('urlScanVisual');
+  const urlScanResult = document.getElementById('urlScanResult');
+
+  urlScanBtn.addEventListener('click', async () => {
+    const targetUrl = urlInput.value.trim();
+    if (!targetUrl) return;
+
+    urlScanBtn.disabled = true;
+    urlScanResult.style.display = 'none';
+    urlScanVisual.style.display = 'flex';
+
+    try {
+      const res = await fetch(API_BASE + '/api/scan-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        throw new Error('Server không phản hồi đúng định dạng, thử lại sau ít phút.');
+      }
+
+      if (data.quotaExceeded) {
+        urlScanVisual.style.display = 'none';
+        urlScanResult.style.display = 'block';
+        urlScanResult.className = 'scan-result danger';
+        urlScanResult.innerHTML = `<div class="quota-warning">⚠ ${data.error}</div>`;
+        return;
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Lỗi không xác định');
+
+      urlScanVisual.style.display = 'none';
+      urlScanResult.style.display = 'block';
+
+      if (data.safe) {
+        urlScanResult.className = 'scan-result safe';
+        urlScanResult.innerHTML = `
+          <div class="scan-verdict safe">✓ AN TOÀN</div>
+          <div class="scan-sub">0 / ${data.totalEngines} engine gắn cờ link này là nguy hiểm</div>
+          <div class="scan-caveat">⚠ Kết quả chỉ phản ánh những gì các engine biết tại thời điểm quét, không đảm bảo tuyệt đối. Vẫn nên cẩn trọng khi nhập thông tin cá nhân/mật khẩu vào bất kỳ trang nào.</div>
+        `;
+      } else {
+        urlScanResult.className = 'scan-result danger';
+        const list = data.flaggedBy.slice(0, 8)
+          .map(f => `<div><span class="eng">${f.engine}</span> → ${f.verdict}</div>`).join('');
+        urlScanResult.innerHTML = `
+          <div class="scan-verdict danger">⚠ LINK NGUY HIỂM</div>
+          <div class="scan-sub">${data.maliciousCount} / ${data.totalEngines} engine gắn cờ link này</div>
+          <div class="scan-engines">${list}</div>
+          <div class="scan-caveat">Khuyến nghị: không truy cập link này, không nhập bất kỳ thông tin nào nếu đã lỡ mở.</div>
+        `;
+      }
+    } catch (err) {
+      urlScanVisual.style.display = 'none';
+      urlScanResult.style.display = 'block';
+      urlScanResult.className = 'scan-result danger';
+      urlScanResult.innerHTML = `<div class="scan-error">Lỗi: ${err.message}</div>`;
+    } finally {
+      urlScanBtn.disabled = false;
+    }
+  });
+
+  // ==================== BỘ ĐẾM THỐNG KÊ CÔNG KHAI ====================
+  (async () => {
+    try {
+      const res = await fetch(API_BASE + '/api/stats');
+      const stats = await res.json();
+      document.getElementById('statFiles').textContent = (stats.totalFileScans || 0).toLocaleString('vi-VN');
+      document.getElementById('statUrls').textContent = (stats.totalUrlScans || 0).toLocaleString('vi-VN');
+      document.getElementById('statThreats').textContent = (stats.totalThreatsFound || 0).toLocaleString('vi-VN');
+    } catch (e) {
+      // im lặng bỏ qua nếu chưa lấy được, giữ dấu "–" mặc định
+    }
+  })();
 
   // ==================== QUÉT REPO GITHUB (kiểu Gitleaks) ====================
   const repoUrlInput = document.getElementById('repoUrlInput');
