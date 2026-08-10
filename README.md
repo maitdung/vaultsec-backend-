@@ -71,4 +71,3 @@ tính đến gói trả phí.
 **"File người dùng tải lên có bị lưu lại không?"**
 Không. `server.js` xoá file tạm ngay sau khi quét xong (dòng `fs.unlink`),
 dù quét thành công hay lỗi.
-# vaultsec-backend-

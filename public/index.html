@@ -351,6 +351,44 @@
   .scan-engines .eng{color:var(--magenta);}
   .scan-error{color:var(--magenta);font-family:'Share Tech Mono',monospace;font-size:.82rem;}
 
+  /* ---------- repo scan ---------- */
+  .repo-input-row{display:flex;gap:10px;padding:20px;flex-wrap:wrap;}
+  .repo-input{
+    flex:1;min-width:220px;background:var(--void);border:1px solid var(--panel-line);
+    color:var(--white);font-family:'Share Tech Mono',monospace;font-size:.85rem;
+    padding:12px 14px;outline:none;transition:border-color .2s ease;
+  }
+  .repo-input:focus{border-color:var(--cyan);}
+  .repo-input::placeholder{color:var(--text-dim);}
+
+  .local-rule-block{
+    margin-top:16px;padding-top:16px;border-top:1px dashed var(--panel-line);
+  }
+  .local-rule-title{
+    font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--amber);
+    letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;
+  }
+  .local-rule-item{
+    font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--text);
+    padding:8px 0;border-top:1px solid var(--panel-line);line-height:1.6;
+  }
+  .local-rule-item:first-child{border-top:none;}
+  .local-rule-item .rname{color:var(--amber);}
+  .local-rule-item .rname.mal{color:var(--magenta);}
+
+  .secret-finding{
+    font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--text);
+    padding:10px 0;border-top:1px solid var(--panel-line);line-height:1.6;
+  }
+  .secret-finding:first-child{border-top:none;}
+  .secret-finding .rule-name{color:var(--magenta);}
+  .secret-finding .file-path{color:var(--amber);word-break:break-all;}
+  .secret-finding .masked{color:var(--text-dim);}
+  .repo-scan-note{
+    font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--text-dim);
+    margin-top:14px;line-height:1.6;
+  }
+
   /* ---------- support ---------- */
   .support-card{
     border:1px solid var(--panel-line);background:var(--panel);
@@ -438,6 +476,7 @@
   <div class="brand"><span class="dot"></span>VAULT.SEC <small>// open-source arsenal</small></div>
   <nav class="quicknav">
     <a href="#scan">Quét file</a>
+    <a href="#reposcan">Quét repo</a>
     <a href="#malware">Mã độc</a>
     <a href="#audit">Hệ thống</a>
     <a href="#vuln">Lỗ hổng</a>
@@ -505,6 +544,37 @@
     </div>
     <div class="scan-log" id="scanLog" style="display:none;"></div>
     <div class="scan-result" id="scanResult" style="display:none;"></div>
+  </div>
+</section>
+
+<!-- REPO SCAN -->
+<section class="module reveal" id="reposcan" style="border-bottom:1px solid var(--panel-line);">
+  <div class="module-head">
+    <span class="module-id alt2">REPO.SCAN</span>
+    <span class="module-title">Quét bí mật lộ trong repo GitHub</span>
+  </div>
+  <p class="module-desc">Dán link 1 repository GitHub công khai, hệ thống sẽ quét các file mã nguồn tìm dấu hiệu lộ API key, mật khẩu, token — theo bộ rule tự viết lấy cảm hứng từ Gitleaks. Chỉ quét repo công khai, không cần đăng nhập GitHub.</p>
+
+  <div class="scan-box">
+    <div class="repo-input-row">
+      <input type="text" id="repoUrlInput" class="repo-input" placeholder="https://github.com/owner/repo">
+      <button class="scan-btn" id="repoScanBtn" type="button">QUÉT REPO</button>
+    </div>
+    <div class="scan-visual" id="repoScanVisual" style="display:none;">
+      <div class="radar">
+        <div class="radar-ring r1"></div>
+        <div class="radar-ring r2"></div>
+        <div class="radar-ring r3"></div>
+        <svg class="radar-shield" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4 L56 14 V30 C56 45 46 55 32 60 C18 55 8 45 8 30 V14 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+          <path class="radar-check" d="M21 32 L29 40 L44 23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect class="radar-sweep" x="6" y="4" width="52" height="4"/>
+        </svg>
+      </div>
+      <div class="scan-visual-text">ĐANG QUÉT REPO<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+      <div class="scan-progress"><div class="scan-progress-fill"></div></div>
+    </div>
+    <div class="scan-result" id="repoScanResult" style="display:none;"></div>
   </div>
 </section>
 
@@ -743,11 +813,23 @@
       logLine('[OK] hoàn tất phân tích · ' + data.totalEngines + ' engine đã kiểm tra', .1);
 
       scanResult.style.display = 'block';
+      const localMatches = data.localRuleMatches || [];
+      const localBlock = localMatches.length
+        ? `<div class="local-rule-block">
+             <div class="local-rule-title">Lớp quét rule cục bộ (kiểu YARA)</div>
+             ${localMatches.map(m => `
+               <div class="local-rule-item">
+                 <span class="rname ${m.severity === 'malicious' ? 'mal' : ''}">${m.name}</span> — ${m.description}
+               </div>`).join('')}
+           </div>`
+        : `<div class="local-rule-block"><div class="local-rule-title">Lớp quét rule cục bộ (kiểu YARA): không phát hiện dấu hiệu bất thường</div></div>`;
+
       if (data.safe) {
         scanResult.className = 'scan-result safe';
         scanResult.innerHTML = `
           <div class="scan-verdict safe">✓ AN TOÀN</div>
           <div class="scan-sub">0 / ${data.totalEngines} engine phát hiện mã độc trong "${data.fileName}"</div>
+          ${localBlock}
         `;
       } else {
         scanResult.className = 'scan-result danger';
@@ -757,6 +839,7 @@
           <div class="scan-verdict danger">⚠ PHÁT HIỆN NGUY HIỂM</div>
           <div class="scan-sub">${data.maliciousCount} / ${data.totalEngines} engine gắn cờ độc hại trong "${data.fileName}"</div>
           <div class="scan-engines">${list}</div>
+          ${localBlock}
         `;
       }
     } catch (err) {
@@ -768,6 +851,73 @@
       scanBtn.disabled = false;
     }
   });
+
+  // ==================== QUÉT REPO GITHUB (kiểu Gitleaks) ====================
+  const repoUrlInput = document.getElementById('repoUrlInput');
+  const repoScanBtn = document.getElementById('repoScanBtn');
+  const repoScanVisual = document.getElementById('repoScanVisual');
+  const repoScanResult = document.getElementById('repoScanResult');
+
+  repoScanBtn.addEventListener('click', async () => {
+    const repoUrl = repoUrlInput.value.trim();
+    if (!repoUrl) return;
+
+    repoScanBtn.disabled = true;
+    repoScanResult.style.display = 'none';
+    repoScanVisual.style.display = 'flex';
+
+    try {
+      const res = await fetch(API_BASE + '/api/repo-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoUrl }),
+      });
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        throw new Error('Server không phản hồi đúng định dạng, thử lại sau ít phút.');
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Lỗi không xác định');
+
+      repoScanVisual.style.display = 'none';
+      repoScanResult.style.display = 'block';
+
+      const note = `<div class="repo-scan-note">Đã quét ${data.filesScanned} / ${data.totalFilesInRepo} file mã nguồn trong repo "${data.repo}"${data.truncatedFileList ? ' (đã giới hạn số file quét để tránh quá tải)' : ''}. Giá trị secret được che bớt để tránh lộ thêm.</div>`;
+
+      if (!data.findings || data.findings.length === 0) {
+        repoScanResult.className = 'scan-result safe';
+        repoScanResult.innerHTML = `
+          <div class="scan-verdict safe">✓ KHÔNG PHÁT HIỆN SECRET LỘ</div>
+          <div class="scan-sub">Repo "${data.repo}"</div>
+          ${note}
+        `;
+      } else {
+        repoScanResult.className = 'scan-result danger';
+        const list = data.findings.slice(0, 30).map(f => `
+          <div class="secret-finding">
+            <span class="rule-name">${f.rule}</span>${f.lowConfidence ? ' <span style="color:var(--text-dim)">(độ tin cậy thấp)</span>' : ''}<br>
+            <span class="file-path">${f.filePath}</span>:${f.line} — <span class="masked">${f.maskedMatch}</span>
+          </div>`).join('');
+        repoScanResult.innerHTML = `
+          <div class="scan-verdict danger">⚠ PHÁT HIỆN ${data.findings.length} DẤU HIỆU LỘ SECRET</div>
+          <div class="scan-sub">Repo "${data.repo}"</div>
+          ${list}
+          ${note}
+        `;
+      }
+    } catch (err) {
+      repoScanVisual.style.display = 'none';
+      repoScanResult.style.display = 'block';
+      repoScanResult.className = 'scan-result danger';
+      repoScanResult.innerHTML = `<div class="scan-error">Lỗi: ${err.message}</div>`;
+    } finally {
+      repoScanBtn.disabled = false;
+    }
+  });
+
   // ---- hiện dần khi cuộn tới ----
   const revealEls = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window) {
